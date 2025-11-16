@@ -1,0 +1,10 @@
+.bin
+velocity-plugin/.gradle
+examples/basic-server/logs/
+examples/basic-server/plugins/
+examples/basic-server/servers/
+examples/basic-server/lang
+examples/basic-server/forwarding.secret
+.vscode
+velocity-plugin/build/
+velocity-plugin/gradle/
