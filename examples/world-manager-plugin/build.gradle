@@ -31,6 +31,11 @@ dependencies {
     compileOnly files('../../freestyle-plugin/build/libs/freestyle-plugin-1.0.0.jar')
 }
 
+// Declare explicit dependency on freestyle-plugin:jar task
+tasks.named('compileJava') {
+    dependsOn ':freestyle-plugin:jar'
+}
+
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
