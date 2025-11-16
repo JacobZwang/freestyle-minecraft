@@ -1,14 +1,12 @@
-# Freestyle Minecraft Plugin
+# Freestyle Minecraft Velocity Plugin
 
 A Velocity plugin that enables **on-demand Minecraft server creation** using the Freestyle VM API. Create, manage, and switch between Minecraft servers dynamically without infrastructure complexity.
 
 ## ✨ Features
 
-- **🌍 Dynamic World Creation** - Create new Minecraft servers on-demand
-- **🔄 World Forking** - Copy existing servers to create backups or variations
-- **⚡ Seamless Switching** - Switch players between servers instantly
-- **🎮 Simple Commands** - Easy-to-use in-game commands
-- **🔧 Plugin API** - Clean API for other plugins to use
+- Create and fork Minecraft servers ~2 seconds. Can be 10s of milliseconds with optimization.
+- Servers are memory snapshots, so they can be suspended and resumed near instantly.
+- Servers automatically suspend when there's no network activity and resume upon request.
 
 ## 🚀 Quick Example
 
@@ -17,7 +15,7 @@ A Velocity plugin that enables **on-demand Minecraft server creation** using the
 FreestyleVMService vmService = FreestylePlugin.getVMService();
 
 // Create a new world
-CompletableFuture<WorldInfo> world = worldManager.createWorld("myworld", WorldType.SURVIVAL);
+CompletableFuture<WorldInfo> world = worldManager.createWorld("myworld");
 
 // Fork an existing world  
 CompletableFuture<WorldInfo> copy = worldManager.forkWorld("myworld", "myworld-copy");
@@ -30,7 +28,7 @@ player.createConnectionRequest(server.getServer("myworld").get()).connect();
 
 ```
 /world create <name> [type]     - Create a new world
-/world fork <source> <new>      - Fork an existing world
+/world fork <source> <new>      - Fork an existing world (even the one you're currently in)
 /world switch <name>            - Switch to a world
 /worlds                         - List all worlds
 ```
