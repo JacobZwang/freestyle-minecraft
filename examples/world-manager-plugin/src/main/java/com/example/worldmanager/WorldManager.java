@@ -5,7 +5,10 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import org.slf4j.Logger;
 
-
+import com.example.velocityplugin.FreestylePlugin;
+import com.example.velocityplugin.vm.FreestyleVMService;
+import com.example.velocityplugin.vm.VMManager;
+import com.example.velocityplugin.vm.ServerInstance;
 
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -27,7 +30,8 @@ public class WorldManager {
     
     private final ProxyServer server;
     private final Logger logger;
-    private final Object freestyleVMService;
+    private final FreestyleVMService freestyleVMService;
+    private final VMManager vmManager;
     private final Map<String, WorldInfo> worlds = new ConcurrentHashMap<>();
     private final Set<String> suspendedWorlds = ConcurrentHashMap.newKeySet();
     private final Map<String, RegisteredServer> activeRegisteredServers = new ConcurrentHashMap<>();
@@ -36,30 +40,21 @@ public class WorldManager {
         this.server = server;
         this.logger = logger;
         this.freestyleVMService = getFreestyleVMService();
+        this.vmManager = freestyleVMService.getVMManager();
         
         // Initialize with existing servers from velocity config
         initializeExistingWorlds();
     }
     
-    private Object getFreestyleVMService() {
-        try {
-            // Get VM service from the Freestyle plugin
-            Class<?> freestylePluginClass = Class.forName("com.example.velocityplugin.FreestylePlugin");
-            Object vmService = freestylePluginClass.getMethod("getVMService").invoke(null);
-            
-            if (vmService == null) {
-                throw new RuntimeException("Freestyle plugin service is null - check if API key is configured");
-            }
-            
-            logger.info("Successfully connected to Freestyle plugin VM service");
-            return vmService;
-            
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Freestyle plugin not found - make sure freestyle-plugin.jar is installed", e);
-        } catch (Exception e) {
-            logger.error("Could not access Freestyle plugin VM service: {}", e.getMessage());
-            throw new RuntimeException("Failed to connect to Freestyle plugin: " + e.getMessage(), e);
+    private FreestyleVMService getFreestyleVMService() {
+        FreestyleVMService vmService = FreestylePlugin.getVMService();
+        
+        if (vmService == null) {
+            throw new RuntimeException("Freestyle plugin service is null - check if API key is configured or if freestyle-plugin is loaded");
         }
+        
+        logger.info("Successfully connected to Freestyle plugin VM service");
+        return vmService;
     }
     
     /**
@@ -71,51 +66,30 @@ public class WorldManager {
                 logger.info("Creating new world: {} of type {}", worldName, type);
                 
                 // Use the Freestyle VM service to create a new server
-                Object vmManager = freestyleVMService.getClass().getMethod("getVMManager").invoke(freestyleVMService);
-                Object serverInstance = vmManager.getClass().getMethod("createServer", String.class).invoke(vmManager, worldName);
+                ServerInstance serverInstance = vmManager.createServer(worldName);
                 
-                // Extract server details using reflection
-                String serverId = (String) serverInstance.getClass().getMethod("getId").invoke(serverInstance);
-                InetSocketAddress address = (InetSocketAddress) serverInstance.getClass().getMethod("getAddress").invoke(serverInstance);
+                // Extract server details - no more reflection!
+                String serverId = serverInstance.getId();
+                InetSocketAddress address = serverInstance.getAddress();
                 
                 WorldInfo world = new WorldInfo(serverId, worldName, type, address, WorldInfo.Status.RUNNING);
                 worlds.put(worldName, world);
                 
-                // Since createRawRegisteredServer doesn't work for dynamic servers,
-                // let's try using registerServer instead
+                // Register with Velocity proxy
                 ServerInfo serverInfo = new ServerInfo(worldName, address);
-                try {
-                    // Try the direct registerServer method instead
-                    RegisteredServer registeredServer = server.registerServer(serverInfo);
-                    activeRegisteredServers.put(worldName, registeredServer);
-                    
-                    logger.info("Successfully registered server with registerServer: {} -> {}", worldName, address);
-                    
-                    // Verify it worked
-                    if (server.getServer(worldName).isPresent()) {
-                        logger.info("✓ Server found in registry after registerServer: {}", worldName);
-                    } else {
-                        logger.warn("✗ Server still not found after registerServer: {}", worldName);
-                    }
-                    
-                } catch (Exception e) {
-                    logger.error("registerServer failed, falling back to createRawRegisteredServer: {}", e.getMessage());
-                    
-                    // Fallback to the original method
-                    try {
-                        RegisteredServer registeredServer = server.createRawRegisteredServer(serverInfo);
-                        activeRegisteredServers.put(worldName, registeredServer);
-                        logger.info("Fallback: used createRawRegisteredServer for: {} -> {}", worldName, address);
-                    } catch (Exception e2) {
-                        logger.error("Both registration methods failed: {} -> {}", worldName, address, e2);
-                        throw new RuntimeException("Failed to register server: " + e2.getMessage(), e2);
-                    }
+                RegisteredServer registeredServer = server.registerServer(serverInfo);
+                activeRegisteredServers.put(worldName, registeredServer);
+                
+                logger.info("Successfully registered server: {} -> {}", worldName, address);
+                
+                // Verify it worked
+                if (server.getServer(worldName).isPresent()) {
+                    logger.info("✓ Server found in registry: {}", worldName);
+                } else {
+                    logger.warn("✗ Server not found in registry: {}", worldName);
                 }
                 
                 logger.info("Successfully created world: {}", world);
-                logger.info("Available servers after registration: {}", server.getAllServers().stream()
-                    .map(s -> s.getServerInfo().getName())
-                    .collect(java.util.stream.Collectors.toList()));
                 
                 return world;
                 
@@ -140,46 +114,28 @@ public class WorldManager {
                 logger.info("Forking world {} to create {}", sourceWorldName, newWorldName);
                 
                 // Use the Freestyle VM service to fork the server
-                Object vmManager = freestyleVMService.getClass().getMethod("getVMManager").invoke(freestyleVMService);
-                Object newServerInstance = vmManager.getClass().getMethod("forkServer", String.class, String.class)
-                    .invoke(vmManager, sourceWorld.getId(), newWorldName);
+                ServerInstance newServerInstance = vmManager.forkServer(sourceWorld.getId(), newWorldName);
                 
-                // Extract server details using reflection
-                String newServerId = (String) newServerInstance.getClass().getMethod("getId").invoke(newServerInstance);
-                InetSocketAddress newAddress = (InetSocketAddress) newServerInstance.getClass().getMethod("getAddress").invoke(newServerInstance);
+                // Extract server details - no more reflection!
+                String newServerId = newServerInstance.getId();
+                InetSocketAddress newAddress = newServerInstance.getAddress();
                 
                 WorldInfo newWorld = new WorldInfo(newServerId, newWorldName, sourceWorld.getType(), newAddress, WorldInfo.Status.RUNNING);
                 newWorld.setParentWorld(sourceWorldName);
                 worlds.put(newWorldName, newWorld);
                 
-                // Register with Velocity using the same method that works for createWorld
+                // Register with Velocity
                 ServerInfo serverInfo = new ServerInfo(newWorldName, newAddress);
-                try {
-                    // Try the direct registerServer method instead
-                    RegisteredServer registeredServer = server.registerServer(serverInfo);
-                    activeRegisteredServers.put(newWorldName, registeredServer);
-                    
-                    logger.info("Successfully registered forked server with registerServer: {} -> {}", newWorldName, newAddress);
-                    
-                    // Verify it worked
-                    if (server.getServer(newWorldName).isPresent()) {
-                        logger.info("✓ Forked server found in registry: {}", newWorldName);
-                    } else {
-                        logger.warn("✗ Forked server still not found after registerServer: {}", newWorldName);
-                    }
-                    
-                } catch (Exception e) {
-                    logger.error("registerServer failed for forked world, falling back to createRawRegisteredServer: {}", e.getMessage());
-                    
-                    // Fallback to the original method
-                    try {
-                        RegisteredServer registeredServer = server.createRawRegisteredServer(serverInfo);
-                        activeRegisteredServers.put(newWorldName, registeredServer);
-                        logger.info("Fallback: used createRawRegisteredServer for forked world: {} -> {}", newWorldName, newAddress);
-                    } catch (Exception e2) {
-                        logger.error("Both registration methods failed for forked world: {} -> {}", newWorldName, newAddress, e2);
-                        throw new RuntimeException("Failed to register forked server: " + e2.getMessage(), e2);
-                    }
+                RegisteredServer registeredServer = server.registerServer(serverInfo);
+                activeRegisteredServers.put(newWorldName, registeredServer);
+                
+                logger.info("Successfully registered forked server: {} -> {}", newWorldName, newAddress);
+                
+                // Verify it worked
+                if (server.getServer(newWorldName).isPresent()) {
+                    logger.info("✓ Forked server found in registry: {}", newWorldName);
+                } else {
+                    logger.warn("✗ Forked server not found in registry: {}", newWorldName);
                 }
                 
                 logger.info("Successfully forked world {} to {}", sourceWorldName, newWorldName);
@@ -206,8 +162,7 @@ public class WorldManager {
                 logger.info("Suspending world: {}", worldName);
                 
                 // Use the Freestyle VM service to suspend the server
-                Object vmManager = freestyleVMService.getClass().getMethod("getVMManager").invoke(freestyleVMService);
-                vmManager.getClass().getMethod("suspendServer", String.class).invoke(vmManager, world.getId());
+                vmManager.suspendServer(world.getId());
                 
                 world.setStatus(WorldInfo.Status.SUSPENDED);
                 suspendedWorlds.add(worldName);
@@ -239,16 +194,13 @@ public class WorldManager {
             try {
                 logger.info("Resuming world: {}", worldName);
                 
-                // Use the Freestyle VM service to resume the server
-                Object vmManager = freestyleVMService.getClass().getMethod("getVMManager").invoke(freestyleVMService);
-                vmManager.getClass().getMethod("resumeServer", String.class).invoke(vmManager, world.getId());
-                
                 world.setStatus(WorldInfo.Status.RUNNING); 
                 suspendedWorlds.remove(worldName);
                 
                 // Re-register with Velocity
                 ServerInfo serverInfo = new ServerInfo(worldName, world.getAddress());
-                server.createRawRegisteredServer(serverInfo);
+                RegisteredServer registeredServer = server.registerServer(serverInfo);
+                activeRegisteredServers.put(worldName, registeredServer);
                 
                 logger.info("Successfully resumed world: {}", worldName);
                 

@@ -1,23 +1,6 @@
-plugins {
-    id 'java'
-}
-
 group = 'com.example'
 version = '1.0.0'
 description = 'Freestyle VM management plugin'
-
-compileJava {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-
-repositories {
-    mavenCentral()
-    maven {
-        name = 'papermc'
-        url = 'https://repo.papermc.io/repository/maven-public/'
-    }
-}
 
 dependencies {
     compileOnly 'com.velocitypowered:velocity-api:3.3.0-SNAPSHOT'
@@ -37,8 +20,4 @@ jar {
     
     // Exclude conflicting META-INF files
     exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
-}
-
-compileJava {
-    options.encoding = 'UTF-8'
 }

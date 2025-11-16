@@ -2,27 +2,22 @@
 
 echo "Building and deploying Freestyle Minecraft plugins..."
 
-# Build main freestyle plugin (contains VM API and Freestyle integration)
-echo "Building freestyle plugin (contains VM API)..."
-cd freestyle-plugin
-gradle build
-if [ $? -ne 0 ]; then
-    echo "Failed to build freestyle plugin"
-    exit 1
+# Create gradle wrapper if it doesn't exist
+if [ ! -f gradlew ]; then
+    echo "Creating gradle wrapper..."
+    gradle wrapper --gradle-version 8.3
 fi
 
-# Build example world manager plugin (lightweight wrapper around freestyle plugin)
-echo "Building world manager plugin (lightweight wrapper)..."
-cd ../examples/world-manager-plugin
+# Build all projects using the multi-project setup
+echo "Building all plugins using multi-project build..."
 ./gradlew build
 if [ $? -ne 0 ]; then
-    echo "Failed to build world manager plugin"
+    echo "Failed to build plugins"
     exit 1
 fi
 
 # Copy plugins to server
 echo "Deploying plugins to server..."
-cd ../..
 cp freestyle-plugin/build/libs/freestyle-plugin-1.0.0.jar examples/basic-server/plugins/
 cp examples/world-manager-plugin/build/libs/world-manager-plugin-1.0.0.jar examples/basic-server/plugins/
 

@@ -115,43 +115,23 @@ public class HandshakeListener {
             // Create the new virtual host address
             InetSocketAddress newVirtualHost = new InetSocketAddress(newHostname, port);
             
-            // Try to modify the virtualHost field (final field)
-            Field virtualHostField = findField(connectedPlayer.getClass(), "virtualHost");
-            if (virtualHostField != null) {
-                logger.debug("Found virtualHost field: {}", virtualHostField.getType().getName());
-                
-                // Make the final field accessible and modifiable
+            boolean foundField = false;
+            
+            // Try to modify the virtualHost field
+            try {
+                Field virtualHostField = connectedPlayer.getClass().getDeclaredField("virtualHost");
                 virtualHostField.setAccessible(true);
-                
-                // Try to remove final modifier (may not work in newer Java versions)
-                try {
-                    Field modifiersField = Field.class.getDeclaredField("modifiers");
-                    modifiersField.setAccessible(true);
-                    modifiersField.setInt(virtualHostField, virtualHostField.getModifiers() & ~Modifier.FINAL);
-                } catch (Exception e) {
-                    logger.debug("Could not modify final modifier (expected in Java 12+): {}", e.getMessage());
-                }
-                
-                // Set the new value
                 virtualHostField.set(connectedPlayer, newVirtualHost);
                 logger.info("Successfully modified virtualHost field to: {}", newVirtualHost);
+                foundField = true;
+            } catch (NoSuchFieldException e) {
+                logger.debug("virtualHost field not found in class: {}", connectedPlayer.getClass().getName());
             }
             
             // Try to modify the rawVirtualHost field if it exists
-            Field rawVirtualHostField = findField(connectedPlayer.getClass(), "rawVirtualHost");
-            if (rawVirtualHostField != null) {
-                logger.debug("Found rawVirtualHost field: {}", rawVirtualHostField.getType().getName());
-                
+            try {
+                Field rawVirtualHostField = connectedPlayer.getClass().getDeclaredField("rawVirtualHost");
                 rawVirtualHostField.setAccessible(true);
-                
-                // Try to remove final modifier
-                try {
-                    Field modifiersField = Field.class.getDeclaredField("modifiers");
-                    modifiersField.setAccessible(true);
-                    modifiersField.setInt(rawVirtualHostField, rawVirtualHostField.getModifiers() & ~Modifier.FINAL);
-                } catch (Exception e) {
-                    logger.debug("Could not modify final modifier (expected in Java 12+): {}", e.getMessage());
-                }
                 
                 // Set the new value (might need to be a string representation)
                 if (rawVirtualHostField.getType() == String.class) {
@@ -161,46 +141,26 @@ public class HandshakeListener {
                     rawVirtualHostField.set(connectedPlayer, newVirtualHost);
                     logger.info("Successfully modified rawVirtualHost field to: {}", newVirtualHost);
                 }
+                foundField = true;
+            } catch (NoSuchFieldException e) {
+                logger.debug("rawVirtualHost field not found in class: {}", connectedPlayer.getClass().getName());
             }
             
             // Log all available fields for debugging if we didn't find what we're looking for
-            if (virtualHostField == null && rawVirtualHostField == null) {
+            if (!foundField) {
                 logger.warn("Could not find virtualHost or rawVirtualHost fields");
                 Field[] fields = connectedPlayer.getClass().getDeclaredFields();
                 logger.debug("Available fields in {}:", connectedPlayer.getClass().getSimpleName());
                 for (Field field : fields) {
                     logger.debug("  - {} ({})", field.getName(), field.getType().getSimpleName());
                 }
-                return false;
             }
             
-            return virtualHostField != null || rawVirtualHostField != null;
+            return foundField;
             
         } catch (Exception e) {
             logger.error("Error modifying virtual host fields", e);
             throw e;
         }
-    }
-    
-    private Field findField(Class<?> clazz, String fieldName) {
-        Class<?> currentClass = clazz;
-        while (currentClass != null) {
-            try {
-                return currentClass.getDeclaredField(fieldName);
-            } catch (NoSuchFieldException e) {
-                // Try parent class
-                currentClass = currentClass.getSuperclass();
-            }
-        }
-        
-        // Also try interfaces
-        for (Class<?> iface : clazz.getInterfaces()) {
-            Field field = findField(iface, fieldName);
-            if (field != null) {
-                return field;
-            }
-        }
-        
-        return null;
     }
 }

@@ -1,0 +1,4 @@
+rootProject.name = 'freestyle-minecraft'
+
+include 'freestyle-plugin'
+include 'examples:world-manager-plugin'

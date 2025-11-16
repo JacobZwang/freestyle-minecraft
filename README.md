@@ -65,30 +65,42 @@ cp examples/world-manager-plugin/build/libs/world-manager-plugin-*.jar velocity/
 Create your own plugins that use the Freestyle service:
 
 ```java
+// Add dependency in build.gradle
+dependencies {
+    compileOnly project(':freestyle-plugin')
+}
+
+// Add dependency in velocity-plugin.json
+"dependencies": [
+    {
+        "id": "freestyle-plugin",
+        "optional": false
+    }
+]
+
 // In your plugin class
-private Object freestyleVMService;
+import com.example.velocityplugin.FreestylePlugin;
+import com.example.velocityplugin.vm.FreestyleVMService;
+import com.example.velocityplugin.vm.VMManager;
+import com.example.velocityplugin.vm.ServerInstance;
+
+private FreestyleVMService freestyleVMService;
+private VMManager vmManager;
 
 @Subscribe
 public void onProxyInitialization(ProxyInitializeEvent event) {
-    // Get the service via reflection
-    Class<?> freestylePluginClass = Class.forName("com.example.velocityplugin.FreestylePlugin");
-    freestyleVMService = freestylePluginClass.getMethod("getVMService").invoke(null);
+    // Get the service with proper typing
+    freestyleVMService = FreestylePlugin.getVMService();
+    vmManager = freestyleVMService.getVMManager();
 }
 
-// Create servers dynamically
-public void createCustomServer(String name) {
-    Object vmManager = freestyleVMService.getClass().getMethod("getVMManager").invoke(freestyleVMService);
-    Object serverInstance = vmManager.getClass().getMethod("createServer", String.class).invoke(vmManager, name);
+public void createCustomServer(String name) throws Exception {
+    ServerInstance serverInstance = vmManager.createServer(name);
+    String serverId = serverInstance.getId();
+    InetSocketAddress address = serverInstance.getAddress();
+    
+    // Register with Velocity
+    ServerInfo serverInfo = new ServerInfo(name, address);
+    server.registerServer(serverInfo);
 }
 ```
-
-## 🛠️ Development Notes
-
-- Uses `registerServer()` for dynamic server registration (not `createRawRegisteredServer()`)
-- All new servers are forked from VM `yrtby` via Freestyle API
-- Plugins communicate via reflection to avoid tight coupling
-- Jackson JSON library is bundled in the freestyle-plugin JAR
-
----
-
-**Ready to build dynamic Minecraft experiences!** 🚀

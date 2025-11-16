@@ -11,10 +11,10 @@ import org.slf4j.Logger;
 
 @Plugin(
     id = "freestyle-plugin",
-    name = "FreestylePlugin", 
+    name = "Freestyle", 
     version = "1.0.0",
-    description = "Freestyle VM management plugin for on-demand Minecraft server creation",
-    authors = {"YourName"}
+    description = "On demand Minecraft server hosting powered by Freestyle VMs",
+    authors = {"JacobZwang"}
 )
 public class FreestylePlugin {
 
