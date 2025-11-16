@@ -6,8 +6,7 @@ import com.velocitypowered.api.proxy.server.ServerInfo;
 import org.slf4j.Logger;
 
 import com.example.velocityplugin.FreestylePlugin;
-import com.example.velocityplugin.vm.FreestyleVMService;
-import com.example.velocityplugin.vm.VMManager;
+import com.example.velocityplugin.vm.FreestyleVMManager;
 import com.example.velocityplugin.vm.ServerInstance;
 
 import java.net.InetSocketAddress;
@@ -30,8 +29,7 @@ public class WorldManager {
     
     private final ProxyServer server;
     private final Logger logger;
-    private final FreestyleVMService freestyleVMService;
-    private final VMManager vmManager;
+    private final FreestyleVMManager vmManager;
     private final Map<String, WorldInfo> worlds = new ConcurrentHashMap<>();
     private final Set<String> suspendedWorlds = ConcurrentHashMap.newKeySet();
     private final Map<String, RegisteredServer> activeRegisteredServers = new ConcurrentHashMap<>();
@@ -39,22 +37,21 @@ public class WorldManager {
     public WorldManager(ProxyServer server, Logger logger) {
         this.server = server;
         this.logger = logger;
-        this.freestyleVMService = getFreestyleVMService();
-        this.vmManager = freestyleVMService.getVMManager();
+        this.vmManager = getVMManager();
         
         // Initialize with existing servers from velocity config
         initializeExistingWorlds();
     }
     
-    private FreestyleVMService getFreestyleVMService() {
-        FreestyleVMService vmService = FreestylePlugin.getVMService();
+    private FreestyleVMManager getVMManager() {
+        FreestyleVMManager vmManager = FreestylePlugin.getVMManager();
         
-        if (vmService == null) {
-            throw new RuntimeException("Freestyle plugin service is null - check if API key is configured or if freestyle-plugin is loaded");
+        if (vmManager == null) {
+            throw new RuntimeException("Freestyle plugin VM manager is null - check if API key is configured or if freestyle-plugin is loaded");
         }
         
-        logger.info("Successfully connected to Freestyle plugin VM service");
-        return vmService;
+        logger.info("Successfully connected to Freestyle plugin VM manager");
+        return vmManager;
     }
     
     /**

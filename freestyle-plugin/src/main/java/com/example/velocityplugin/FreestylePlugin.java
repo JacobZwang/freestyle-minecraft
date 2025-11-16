@@ -5,8 +5,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.ProxyServer;
-import com.example.velocityplugin.vm.FreestyleVMService;
-import com.example.velocityplugin.vm.FreestyleVMServiceImpl;
+import com.example.velocityplugin.vm.FreestyleVMManager;
 import org.slf4j.Logger;
 
 @Plugin(
@@ -20,7 +19,7 @@ public class FreestylePlugin {
 
     private final ProxyServer server;
     private final Logger logger;
-    private static FreestyleVMService vmService;
+    private static FreestyleVMManager vmManager;
 
     @Inject
     public FreestylePlugin(ProxyServer server, Logger logger) {
@@ -33,8 +32,8 @@ public class FreestylePlugin {
         logger.info("FreestylePlugin has been initialized!");
         
         try {
-            // Initialize the VM service
-            vmService = new FreestyleVMServiceImpl(logger);
+            // Initialize the VM manager
+            vmManager = new FreestyleVMManager(logger);
             
             // Register listeners
             server.getEventManager().register(this, new HandshakeListener(server, logger));
@@ -45,16 +44,16 @@ public class FreestylePlugin {
         } catch (Exception e) {
             logger.error("Failed to initialize FreestylePlugin: {}", e.getMessage());
             logger.error("Check your freestyle-config.properties file and ensure your API key is set");
-            // Don't throw - let the plugin load but mark service as unavailable
-            vmService = null;
+            // Don't throw - let the plugin load but mark manager as unavailable
+            vmManager = null;
         }
     }
     
     /**
-     * Get the VM service instance. This can be called by other plugins.
+     * Get the VM manager instance. This can be called by other plugins.
      */
-    public static FreestyleVMService getVMService() {
-        return vmService;
+    public static FreestyleVMManager getVMManager() {
+        return vmManager;
     }
 
 }

@@ -1,0 +1,16 @@
+{
+    "id": "simple-server-manager",
+    "name": "SimpleServerManager",
+    "version": "1.0.0",
+    "description": "Simple example of using Freestyle VMs for on-demand servers",
+    "authors": [
+        "Example"
+    ],
+    "main": "com.example.worldmanager.SimpleServerManager",
+    "dependencies": [
+        {
+            "id": "freestyle-plugin",
+            "optional": false
+        }
+    ]
+}
