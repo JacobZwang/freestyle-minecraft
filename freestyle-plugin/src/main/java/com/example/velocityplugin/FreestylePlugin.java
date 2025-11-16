@@ -38,8 +38,6 @@ public class FreestylePlugin {
             
             // Register listeners
             server.getEventManager().register(this, new HandshakeListener(server, logger));
-            server.getEventManager().register(this, new HostnameForwardingListener(server, logger));
-            server.getEventManager().register(this, new PlayerListener(logger));
             
             logger.info("FreestylePlugin loaded successfully. VM management API available for other plugins.");
             logger.info("Using Freestyle API - servers will be forked from VM 'yrtby'");
