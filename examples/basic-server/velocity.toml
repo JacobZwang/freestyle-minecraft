@@ -77,24 +77,14 @@ enable-player-address-logging = true
 [servers]
 # Configure your servers here. Each key represents the server's name, and the value
 # represents the IP address of the server to connect to.
-lobby = "wfqgc.vm.freestyle.sh"
-lobby-alt = "yrtby.vm.freestyle.sh"
-# factions = "34.94.30.208:25566"
-# minigames = "34.94.30.208:25567"
+main = "jrikn.vm.freestyle.sh"
 
 # In what order we should try servers when a player logs in or is kicked from a server.
-try = ["lobby"]
+try = ["main"]
 
 [forced-hosts]
-# Configure your forced hosts here.
-"wfqgc.vm.freestyle.sh" = ["lobby"]
+"jrikn.vm.freestyle.sh" = ["main"]
 
-# "factions.example.com" = [
-#     "factions"
-# ]
-# "minigames.example.com" = [
-#     "minigames"
-# ]
 
 [advanced]
 # How large a Minecraft packet has to be before we compress it. Setting this to zero will
