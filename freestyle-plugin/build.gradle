@@ -4,7 +4,7 @@ plugins {
 
 group = 'com.example'
 version = '1.0.0'
-description = 'A Velocity plugin'
+description = 'Freestyle VM management plugin'
 
 compileJava {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -22,11 +22,21 @@ repositories {
 dependencies {
     compileOnly 'com.velocitypowered:velocity-api:3.3.0-SNAPSHOT'
     annotationProcessor 'com.velocitypowered:velocity-api:3.3.0-SNAPSHOT'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
 }
 
 jar {
-    archiveBaseName = project.name
+    archiveBaseName = 'freestyle-plugin'
     archiveVersion = project.version
+    
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    // Exclude conflicting META-INF files
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
 }
 
 compileJava {

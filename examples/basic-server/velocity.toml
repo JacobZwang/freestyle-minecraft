@@ -77,7 +77,8 @@ enable-player-address-logging = true
 [servers]
 # Configure your servers here. Each key represents the server's name, and the value
 # represents the IP address of the server to connect to.
-lobby = "wfqgc.vm.freestyle.sh:25565"
+lobby = "wfqgc.vm.freestyle.sh"
+lobby-alt = "yrtby.vm.freestyle.sh"
 # factions = "34.94.30.208:25566"
 # minigames = "34.94.30.208:25567"
 
@@ -87,6 +88,7 @@ try = ["lobby"]
 [forced-hosts]
 # Configure your forced hosts here.
 "wfqgc.vm.freestyle.sh" = ["lobby"]
+
 # "factions.example.com" = [
 #     "factions"
 # ]

@@ -1,0 +1,16 @@
+{
+    "id": "world-manager",
+    "name": "WorldManager",
+    "version": "1.0.0",
+    "description": "Example plugin for managing on-demand Minecraft worlds using VM abstraction",
+    "authors": [
+        "Example"
+    ],
+    "main": "com.example.worldmanager.WorldManagerPlugin",
+    "dependencies": [
+        {
+            "id": "freestyle-plugin",
+            "optional": false
+        }
+    ]
+}

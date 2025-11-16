@@ -1,10 +1,26 @@
-.bin
-velocity-plugin/.gradle
+# Build outputs
+build/
+*.jar
+.gradle/
+gradle/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Server runtime files
 examples/basic-server/logs/
 examples/basic-server/plugins/
 examples/basic-server/servers/
-examples/basic-server/lang
+examples/basic-server/lang/
 examples/basic-server/forwarding.secret
-.vscode
-velocity-plugin/build/
-velocity-plugin/gradle/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+.bin

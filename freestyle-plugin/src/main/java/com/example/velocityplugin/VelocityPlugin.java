@@ -1,0 +1,58 @@
+package com.example.velocityplugin;
+
+import com.google.inject.Inject;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.proxy.ProxyServer;
+import com.example.velocityplugin.vm.FreestyleVMService;
+import com.example.velocityplugin.vm.FreestyleVMServiceImpl;
+import org.slf4j.Logger;
+
+@Plugin(
+    id = "freestyle-plugin",
+    name = "FreestylePlugin", 
+    version = "1.0.0",
+    description = "Freestyle VM management plugin for on-demand Minecraft server creation",
+    authors = {"YourName"}
+)
+public class FreestylePlugin {
+
+    private final ProxyServer server;
+    private final Logger logger;
+    private static FreestyleVMService vmService;
+
+    @Inject
+    public FreestylePlugin(ProxyServer server, Logger logger) {
+        this.server = server;
+        this.logger = logger;
+    }
+
+    @Subscribe
+    public void onProxyInitialization(ProxyInitializeEvent event) {
+        logger.info("FreestylePlugin has been initialized!");
+        
+        // Initialize the VM service
+        vmService = new FreestyleVMServiceImpl(logger);
+        
+        // Register listeners
+        server.getEventManager().register(this, new HandshakeListener(server, logger));
+        server.getEventManager().register(this, new HostnameForwardingListener(server, logger));
+        server.getEventManager().register(this, new PlayerListener(logger));
+        
+        logger.info("FreestylePlugin loaded. VM management API available for other plugins.");
+        if (vmService.isUsingFreestyleAPI()) {
+            logger.info("Using Freestyle API - servers will be forked from VM 'yrtby'");
+        } else {
+            logger.info("Using local testing mode - servers simulated on localhost");
+        }
+    }
+    
+    /**
+     * Get the VM service instance. This can be called by other plugins.
+     */
+    public static FreestyleVMService getVMService() {
+        return vmService;
+    }
+
+}
