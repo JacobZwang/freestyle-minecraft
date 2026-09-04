@@ -39,11 +39,12 @@ public class FreestylePlugin {
             server.getEventManager().register(this, new AddressRewriter(server, logger));
 
             logger.info("FreestylePlugin loaded successfully. VM management API available for other plugins.");
-            logger.info("Using Freestyle API - servers will be forked from VM 'yrtby'");
+            logger.info("New servers will be forked from VM '{}'", vmManager.getConfig().getBaseVm());
 
         } catch (Exception e) {
             logger.error("Failed to initialize FreestylePlugin: {}", e.getMessage());
-            logger.error("Check your freestyle-config.properties file and ensure your API key is set");
+            logger.error("Set FREESTYLE_API_KEY in the environment or freestyle.api.key in "
+                    + "freestyle-config.properties. Keys come from https://dash.freestyle.sh");
             // Don't throw - let the plugin load but mark manager as unavailable
             vmManager = null;
         }

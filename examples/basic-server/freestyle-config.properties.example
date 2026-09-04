@@ -1,0 +1,36 @@
+# Freestyle Plugin Configuration
+#
+# Every setting here can also come from the environment, which takes precedence.
+# The environment variable name is listed beside each key.
+#
+# Get an API key at https://dash.freestyle.sh
+
+# FREESTYLE_API_KEY (required)
+freestyle.api.key=your-api-key-here
+
+# FREESTYLE_API_URL
+freestyle.api.url=https://api.freestyle.sh
+
+# FREESTYLE_BASE_VM
+# The VM new worlds are forked from, by Freestyle id (vm-...) or your account slug.
+# It should already be running a Minecraft server on freestyle.minecraft.port.
+freestyle.base.vm=minecraft
+
+# FREESTYLE_DOMAIN_SUFFIX
+# Worlds are published under this domain. Any unused subdomain of style.dev is
+# free and needs no verification or DNS records. To use your own domain, verify
+# it first: https://www.freestyle.sh/docs/vms/domain-verification
+freestyle.domain.suffix=style.dev
+
+# FREESTYLE_DOMAIN_PREFIX
+# Prefix for generated world domains, e.g. mc-survival-a1b2c3.style.dev
+freestyle.domain.prefix=mc
+
+# FREESTYLE_IDLE_TIMEOUT_SECONDS
+# Pause a world after this many seconds with no network activity. Its memory is
+# saved, so a player joining resumes the same server. -1 never pauses.
+freestyle.idle.timeout.seconds=300
+
+# FREESTYLE_MINECRAFT_PORT
+# The port the Minecraft server listens on inside the VM.
+freestyle.minecraft.port=25565

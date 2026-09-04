@@ -111,7 +111,7 @@ public class WorldManager {
                 logger.info("Forking world {} to create {}", sourceWorldName, newWorldName);
                 
                 // Use the Freestyle VM service to fork the server
-                ServerInstance newServerInstance = vmManager.forkServer(sourceWorld.getId(), newWorldName);
+                ServerInstance newServerInstance = vmManager.forkServer(requireVmId(sourceWorld), newWorldName);
                 
                 // Extract server details - no more reflection!
                 String newServerId = newServerInstance.getId();
@@ -159,7 +159,7 @@ public class WorldManager {
                 logger.info("Suspending world: {}", worldName);
                 
                 // Use the Freestyle VM service to suspend the server
-                vmManager.suspendServer(world.getId());
+                vmManager.suspendServer(requireVmId(world));
                 
                 world.setStatus(WorldInfo.Status.SUSPENDED);
                 suspendedWorlds.add(worldName);
@@ -190,8 +190,12 @@ public class WorldManager {
             
             try {
                 logger.info("Resuming world: {}", worldName);
-                
-                world.setStatus(WorldInfo.Status.RUNNING); 
+
+                // Start the VM back up. Players joining the domain wake it on their own, but a
+                // world resumed from a command should be up before we re-register it.
+                vmManager.resumeServer(requireVmId(world));
+
+                world.setStatus(WorldInfo.Status.RUNNING);
                 suspendedWorlds.remove(worldName);
                 
                 // Re-register with Velocity
@@ -208,6 +212,38 @@ public class WorldManager {
         });
     }
     
+    /**
+     * Deletes a world and the VM behind it. Permanent: the VM's disk, its saved memory, and the
+     * domain routing to it all go away.
+     */
+    public CompletableFuture<Void> deleteWorld(String worldName) {
+        return CompletableFuture.runAsync(() -> {
+            WorldInfo world = worlds.get(worldName);
+            if (world == null) {
+                throw new IllegalArgumentException("World not found: " + worldName);
+            }
+
+            try {
+                logger.info("Deleting world: {}", worldName);
+
+                vmManager.deleteServer(requireVmId(world));
+
+                server.getServer(worldName).ifPresent(registeredServer ->
+                    server.unregisterServer(registeredServer.getServerInfo()));
+
+                worlds.remove(worldName);
+                suspendedWorlds.remove(worldName);
+                activeRegisteredServers.remove(worldName);
+
+                logger.info("Successfully deleted world: {}", worldName);
+
+            } catch (Exception e) {
+                logger.error("Failed to delete world: {}", worldName, e);
+                throw new RuntimeException("Failed to delete world: " + e.getMessage(), e);
+            }
+        });
+    }
+
     /**
      * Lists all available worlds
      */
@@ -237,21 +273,32 @@ public class WorldManager {
     }
     
     private void initializeExistingWorlds() {
-        // Initialize with any existing servers from velocity config
+        // Servers from velocity.toml are plain backends, not Freestyle VMs. They get a null id so
+        // requireVmId() rejects VM operations on them instead of calling the API with a made-up id.
         server.getAllServers().forEach(registeredServer -> {
             String name = registeredServer.getServerInfo().getName();
             InetSocketAddress address = registeredServer.getServerInfo().getAddress();
-            
+
             WorldInfo world = new WorldInfo(
-                UUID.randomUUID().toString(),
+                null,
                 name,
                 WorldType.SURVIVAL, // Default type for existing servers
                 address,
                 WorldInfo.Status.RUNNING
             );
-            
+
             worlds.put(name, world);
-            logger.info("Registered existing server as world: {}", name);
+            logger.info("Registered existing server as world: {} (not VM-backed)", name);
         });
+    }
+
+    /** Returns the VM id for a world, or fails clearly when the world is not VM-backed. */
+    private String requireVmId(WorldInfo world) {
+        if (world.getId() == null) {
+            throw new IllegalArgumentException(
+                "World '" + world.getName() + "' is a static server from velocity.toml, "
+                    + "not a Freestyle VM, so it cannot be forked, suspended, or resumed");
+        }
+        return world.getId();
     }
 }
